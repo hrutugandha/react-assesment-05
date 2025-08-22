@@ -1,13 +1,24 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { getRecipes } from '../services/recipeApi';
+import { getRecipes, searchRecipes } from '../services/recipeApi';
 
 const HomePage = () => {
-  const { data: recipes, isLoading, error } = useQuery({
-    queryKey: ['recipes'],
-    queryFn: getRecipes,
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  const { data: recipes, isLoading, error, refetch } = useQuery({
+    queryKey: ['recipes', searchTerm],
+    queryFn: () => searchTerm ? searchRecipes(searchTerm) : getRecipes(),
   });
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    refetch();
+  };
+
+  const handleClearSearch = () => {
+    setSearchTerm('');
+  };
 
   if (isLoading) return <div className="loading">Loading recipes...</div>;
   if (error) return <div className="error">Error loading recipes: {error.message}</div>;
@@ -17,6 +28,45 @@ const HomePage = () => {
       <div className="page-header">
         <h1>Recipe Book</h1>
         <p>Discover and share your favorite recipes</p>
+      </div>
+
+      {/* Search Bar */}
+      <div className="search-container">
+        <form onSubmit={handleSearch} className="search-form">
+          <div className="search-input-group">
+            <input
+              type="text"
+              placeholder="Search recipes by name, category, or ingredients..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="search-input"
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={handleClearSearch}
+                className="clear-search-btn"
+                aria-label="Clear search"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+          <button type="submit" className="search-btn">
+            Search
+          </button>
+        </form>
+        
+        {searchTerm && (
+          <div className="search-results-info">
+            <p>
+              Showing {recipes?.length || 0} results for "{searchTerm}"
+              <button onClick={handleClearSearch} className="clear-results-btn">
+                Clear search
+              </button>
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="recipes-grid">
@@ -44,7 +94,17 @@ const HomePage = () => {
         ))}
       </div>
 
-      {recipes?.length === 0 && (
+      {recipes?.length === 0 && searchTerm && (
+        <div className="empty-state">
+          <h3>No recipes found</h3>
+          <p>Try a different search term or browse all recipes</p>
+          <button onClick={handleClearSearch} className="add-recipe-btn">
+            Show All Recipes
+          </button>
+        </div>
+      )}
+
+      {recipes?.length === 0 && !searchTerm && (
         <div className="empty-state">
           <h3>No recipes yet</h3>
           <p>Be the first to add a recipe!</p>
