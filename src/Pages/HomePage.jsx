@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { getRecipes, searchRecipes } from '../services/recipeApi';
@@ -10,6 +10,15 @@ const HomePage = () => {
     queryKey: ['recipes', searchTerm],
     queryFn: () => searchTerm ? searchRecipes(searchTerm) : getRecipes(),
   });
+
+  // Debug: Log recipes data to console
+  useEffect(() => {
+    if (recipes) {
+      console.log('Recipes loaded:', recipes);
+      console.log('Number of recipes:', recipes.length);
+      console.log('Recipe IDs:', recipes.map(r => r.id));
+    }
+  }, [recipes]);
 
   const handleSearch = (e) => {
     e.preventDefault();
